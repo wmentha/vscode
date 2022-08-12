@@ -275,6 +275,22 @@ export class CursorsController extends Disposable {
 		return this._cursors.getBottomMostViewPosition();
 	}
 
+	public getTopMostCursorIndex(): number {
+		return this._cursors.getTopMostCursorIndex();
+	}
+
+	public getBottomMostCursorIndex(): number {
+		return this._cursors.getBottomMostCursorIndex();
+	}
+
+	public getTopMostSelection(): Selection {
+		return this._cursors.getTopMostSelection();
+	}
+
+	public getBottomMostSelection(): Selection {
+		return this._cursors.getBottomMostSelection();
+	}
+
 	public getCursorColumnSelectData(): IColumnSelectData {
 		if (this._columnSelectData) {
 			return this._columnSelectData;

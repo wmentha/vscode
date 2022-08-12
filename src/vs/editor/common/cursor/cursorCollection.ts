@@ -25,10 +25,22 @@ export class CursorCollection {
 	// This index refers to `cursors.slice(1)`, i.e. after removing the primary cursor.
 	private lastAddedCursorIndex: number;
 
+	// The first and last cursors relative to the context
+	private firstRelativeCursorIndex: number;
+	private lastRelativeCursorIndex: number;
+
+	// The first and last selections relative to the context
+	private firstRelativeSelectionIndex: number;
+	private lastRelativeSelectionIndex: number;
+
 	constructor(context: CursorContext) {
 		this.context = context;
 		this.cursors = [new Cursor(context)];
 		this.lastAddedCursorIndex = 0;
+		this.firstRelativeCursorIndex = 0;
+		this.lastRelativeCursorIndex = 0;
+		this.firstRelativeSelectionIndex = 0;
+		this.lastRelativeSelectionIndex = 0;
 	}
 
 	public dispose(): void {
@@ -140,6 +152,25 @@ export class CursorCollection {
 	private _addSecondaryCursor(): void {
 		this.cursors.push(new Cursor(this.context));
 		this.lastAddedCursorIndex = this.cursors.length - 1;
+		this._updateRelativeCursorsSelections(this.lastAddedCursorIndex);
+	}
+
+	private _updateRelativeCursorsSelections(cursorIndex: number): void {
+		const cursorPosition = this.cursors[cursorIndex].viewState.position;
+		const firstRelativeCursorPosition = this.cursors[this.firstRelativeCursorIndex].viewState.position;
+		const lastRelativeCursorPosition = this.cursors[this.lastRelativeCursorIndex].viewState.position;
+
+		if (cursorPosition.isBefore(firstRelativeCursorPosition)) {
+			this.firstRelativeCursorIndex = this.lastAddedCursorIndex;
+			if (this.cursors[this.firstRelativeCursorIndex].viewState.hasSelection()) {
+				this.firstRelativeSelectionIndex = this.firstRelativeCursorIndex;
+			}
+		} else if (!cursorPosition.isBefore(lastRelativeCursorPosition)) {
+			this.lastRelativeCursorIndex = this.lastAddedCursorIndex;
+			if (this.cursors[this.lastRelativeCursorIndex].viewState.hasSelection()) {
+				this.lastRelativeSelectionIndex = this.lastRelativeCursorIndex;
+			}
+		}
 	}
 
 	public getLastAddedCursorIndex(): number {
@@ -149,12 +180,42 @@ export class CursorCollection {
 		return this.lastAddedCursorIndex;
 	}
 
+	public getTopMostCursorIndex(): number {
+		if (this.cursors.length === 1 || this.lastAddedCursorIndex === 0) {
+			return 0;
+		}
+		return this.firstRelativeCursorIndex;
+	}
+
+	public getBottomMostCursorIndex(): number {
+		if (this.cursors.length === 1 || this.lastAddedCursorIndex === 0) {
+			return 0;
+		}
+		return this.lastRelativeCursorIndex;
+	}
+
+	public getTopMostSelection(): Selection {
+		return this.cursors[this.firstRelativeSelectionIndex].viewState.selection;
+	}
+
+	public getBottomMostSelection(): Selection {
+		return this.cursors[this.lastRelativeSelectionIndex].viewState.selection;
+	}
+
 	private _removeSecondaryCursor(removeIndex: number): void {
 		if (this.lastAddedCursorIndex >= removeIndex + 1) {
 			this.lastAddedCursorIndex--;
 		}
 		this.cursors[removeIndex + 1].dispose(this.context);
 		this.cursors.splice(removeIndex + 1, 1);
+
+		this.firstRelativeCursorIndex = 0;
+		this.lastRelativeCursorIndex = 0;
+		this.firstRelativeSelectionIndex = 0;
+		this.lastRelativeSelectionIndex = 0;
+		for (let index = 0; index < this.cursors.length; index++) {
+			this._updateRelativeCursorsSelections(index);
+		}
 	}
 
 	public normalize(): void {

@@ -17,6 +17,7 @@ import { EditorTheme } from 'vs/editor/common/editorTheme';
 import { VerticalRevealType } from 'vs/editor/common/viewEvents';
 import { ILineBreaksComputer, InjectedText } from 'vs/editor/common/modelLineProjectionData';
 import { ViewEventHandler } from 'vs/editor/common/viewEventHandler';
+import { Selection } from 'vs/editor/common/core/selection';
 
 export interface IViewModel extends ICursorSimpleModel {
 
@@ -74,6 +75,10 @@ export interface IViewModel extends ICursorSimpleModel {
 	//#region cursor
 	getPrimaryCursorState(): CursorState;
 	getLastAddedCursorIndex(): number;
+	getTopMostCursorIndex(): number;
+	getBottomMostCursorIndex(): number;
+	getTopMostSelection(): Selection;
+	getBottomMostSelection(): Selection;
 	getCursorStates(): CursorState[];
 	setCursorStates(source: string | null | undefined, reason: CursorChangeReason, states: PartialCursorState[] | null): boolean;
 	getCursorColumnSelectData(): IColumnSelectData;

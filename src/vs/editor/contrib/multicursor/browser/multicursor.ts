@@ -29,6 +29,8 @@ import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegis
 import { overviewRulerSelectionHighlightForeground, minimapSelectionOccurrenceHighlight } from 'vs/platform/theme/common/colorRegistry';
 import { themeColorFromId } from 'vs/platform/theme/common/themeService';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
+import { compareBy } from 'vs/base/common/arrays';
+import { Position } from 'vs/editor/common/core/position';
 
 function announceCursorChange(previousCursorState: CursorState[], cursorState: CursorState[]): void {
 	const cursorDiff = cursorState.filter(cs => !previousCursorState.find(pcs => pcs.equals(cs)));
@@ -273,6 +275,11 @@ export class MultiCursorSessionResult {
 	) { }
 }
 
+interface SortedSelection {
+	index: number;
+	selection: Selection;
+}
+
 export class MultiCursorSession {
 
 	public static create(editor: ICodeEditor, findController: CommonFindController): MultiCursorSession | null {
@@ -379,12 +386,45 @@ export class MultiCursorSession {
 
 		const allSelections = this._editor.getSelections();
 		const lastAddedSelection = allSelections[allSelections.length - 1];
-		const nextMatch = this._editor.getModel().findNextMatch(this.searchText, lastAddedSelection.getEndPosition(), false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false);
+		const bottomMostSelection = this._editor._getViewModel().getBottomMostSelection();
 
-		if (!nextMatch) {
-			return null;
+		const nextSelection = (model: ITextModel, position: Position, searchText: string, wholeWord: boolean, matchCase: boolean): Selection | null => {
+			let nextMatch = model.findNextMatch(searchText, position, false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false);
+			if (!nextMatch) {
+				return null;
+			}
+			return new Selection(nextMatch.range.startLineNumber, nextMatch.range.startColumn, nextMatch.range.endLineNumber, nextMatch.range.endColumn);
+		};
+
+		if (
+			// If bottomMostSelection is not the lastAddedSelection, then there could be a bubble...
+			!bottomMostSelection.containsPosition(lastAddedSelection.getPosition())
+			// length from end of lastAddedSelection to start of bottomMostSelection is compared to searchText length, if gte, sort selections, otherwise these can't be a bubble
+			&& this._editor.getModel().getValueInRange(Range.fromPositions(lastAddedSelection.getEndPosition(), bottomMostSelection.getStartPosition())).replace(/\r\n/g, '\n').length >= this.searchText.length
+		) {
+			let sortedSelections = this._getSortedSelections(allSelections);
+			for (let index = 0, length = sortedSelections.length - 1; index < length; index++) {
+				let currentSelection = nextSelection(this._editor.getModel(), sortedSelections[index].selection.getEndPosition(), this.searchText, this.wholeWord, this.matchCase);
+				if (!currentSelection || !currentSelection.getPosition().equals(sortedSelections[index+1].selection.getPosition())) {
+					return currentSelection; // Bubble found or null encountered
+				}
+			}
 		}
-		return new Selection(nextMatch.range.startLineNumber, nextMatch.range.startColumn, nextMatch.range.endLineNumber, nextMatch.range.endColumn);
+		return nextSelection(this._editor.getModel(), bottomMostSelection.getEndPosition(), this.searchText, this.wholeWord, this.matchCase);
+	}
+
+	private _getSortedSelections(selections: Selection[]): SortedSelection[] {
+		const sortedSelections: SortedSelection[] = [];
+		const selectionsLength = selections.length;
+		for (let i = 0; i < selectionsLength; i++) {
+			sortedSelections.push({
+				index: i,
+				selection: selections[i],
+			});
+		}
+
+		sortedSelections.sort(compareBy(s => s.selection, Range.compareRangesUsingStarts));
+		return sortedSelections;
 	}
 
 	public addSelectionToPreviousFindMatch(): MultiCursorSessionResult | null {
@@ -430,12 +470,31 @@ export class MultiCursorSession {
 
 		const allSelections = this._editor.getSelections();
 		const lastAddedSelection = allSelections[allSelections.length - 1];
-		const previousMatch = this._editor.getModel().findPreviousMatch(this.searchText, lastAddedSelection.getStartPosition(), false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false);
+		const topMostSelection = this._editor._getViewModel().getTopMostSelection();
 
-		if (!previousMatch) {
-			return null;
+		const previousSelection = (model: ITextModel, position: Position, searchText: string, wholeWord: boolean, matchCase: boolean): Selection | null => {
+			let nextMatch = model.findPreviousMatch(searchText, position, false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false);
+			if (!nextMatch) {
+				return null;
+			}
+			return new Selection(nextMatch.range.startLineNumber, nextMatch.range.startColumn, nextMatch.range.endLineNumber, nextMatch.range.endColumn);
+		};
+
+		if (
+			// If topMostSelection is not the lastAddedSelection, then there could be a bubble...
+			!topMostSelection.containsPosition(lastAddedSelection.getPosition())
+			// length from end of topMostSelection to start of lastAddedSelection is compared to searchText length, if gte, sort selections, otherwise these can't be a bubble
+			&& this._editor.getModel().getValueInRange(Range.fromPositions(topMostSelection.getEndPosition(), lastAddedSelection.getStartPosition())).replace(/\r\n/g, '\n').length >= this.searchText.length
+		) {
+			let sortedSelections = this._getSortedSelections(allSelections);
+			for (let index = 0, length = sortedSelections.length - 1; index < length; index++) {
+				let currentSelection = previousSelection(this._editor.getModel(), sortedSelections[index].selection.getStartPosition(), this.searchText, this.wholeWord, this.matchCase);
+				if (!currentSelection || !currentSelection.getPosition().equals(sortedSelections[index+1].selection.getPosition())) {
+					return currentSelection; // Bubble found or null encountered
+				}
+			}
 		}
-		return new Selection(previousMatch.range.startLineNumber, previousMatch.range.startColumn, previousMatch.range.endLineNumber, previousMatch.range.endColumn);
+		return previousSelection(this._editor.getModel(), topMostSelection.getStartPosition(), this.searchText, this.wholeWord, this.matchCase);
 	}
 
 	public selectAll(searchScope: Range[] | null): FindMatch[] {

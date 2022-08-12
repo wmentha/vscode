@@ -953,6 +953,18 @@ export class ViewModel extends Disposable implements IViewModel {
 	public getLastAddedCursorIndex(): number {
 		return this._cursor.getLastAddedCursorIndex();
 	}
+	public getTopMostCursorIndex(): number {
+		return this._cursor.getTopMostCursorIndex();
+	}
+	public getBottomMostCursorIndex(): number {
+		return this._cursor.getBottomMostCursorIndex();
+	}
+	public getTopMostSelection(): Selection {
+		return this._cursor.getTopMostSelection();
+	}
+	public getBottomMostSelection(): Selection {
+		return this._cursor.getBottomMostSelection();
+	}
 	public getCursorStates(): CursorState[] {
 		return this._cursor.getCursorStates();
 	}
@@ -1160,4 +1172,3 @@ class OverviewRulerDecorations {
 		}
 	}
 }
-

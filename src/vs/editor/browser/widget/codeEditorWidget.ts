@@ -761,6 +761,20 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 		return this._modelData.viewModel.getSelections();
 	}
 
+	public getTopMostCursorIndex(): number | null {
+		if (!this._modelData) {
+			return null;
+		}
+		return this._modelData.viewModel.getTopMostCursorIndex();
+	}
+
+	public getBottomMostCursorIndex(): number | null {
+		if (!this._modelData) {
+			return null;
+		}
+		return this._modelData.viewModel.getBottomMostCursorIndex();
+	}
+
 	public setSelection(range: IRange, source?: string): void;
 	public setSelection(editorRange: Range, source?: string): void;
 	public setSelection(selection: ISelection, source?: string): void;
