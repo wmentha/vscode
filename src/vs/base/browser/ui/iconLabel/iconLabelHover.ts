@@ -163,7 +163,7 @@ export function setupCustomHover(hoverDelegate: IHoverDelegate, htmlElement: HTM
 
 	let hoverWidget: UpdatableHoverWidget | undefined;
 
-	const hideHover = (disposeWidget: boolean, disposePreparation: boolean) => {
+	const hideHover = (disposeWidget: boolean, disposePreparation: boolean, resetDelay: boolean) => {
 		if (disposeWidget) {
 			hoverWidget?.dispose();
 			hoverWidget = undefined;
@@ -172,7 +172,7 @@ export function setupCustomHover(hoverDelegate: IHoverDelegate, htmlElement: HTM
 			hoverPreparation?.dispose();
 			hoverPreparation = undefined;
 		}
-		hoverDelegate.onDidHideHover?.();
+		hoverDelegate.onDidHideHover?.(resetDelay);
 	};
 
 	const triggerShowHover = (delay: number, focus?: boolean, target?: IHoverDelegateTarget) => {
@@ -191,10 +191,10 @@ export function setupCustomHover(hoverDelegate: IHoverDelegate, htmlElement: HTM
 
 		const toDispose: DisposableStore = new DisposableStore();
 
-		const onMouseLeave = (e: MouseEvent) => hideHover(false, (<any>e).fromElement === htmlElement);
+		const onMouseLeave = (e: MouseEvent) => hideHover(false, (<any>e).fromElement === htmlElement, hoverDelegate.delay !== 0);
 		toDispose.add(dom.addDisposableListener(htmlElement, dom.EventType.MOUSE_LEAVE, onMouseLeave, true));
 
-		const onMouseDown = () => hideHover(true, true);
+		const onMouseDown = () => hideHover(true, true, false);
 		toDispose.add(dom.addDisposableListener(htmlElement, dom.EventType.MOUSE_DOWN, onMouseDown, true));
 
 		const target: IHoverDelegateTarget = {
@@ -206,7 +206,7 @@ export function setupCustomHover(hoverDelegate: IHoverDelegate, htmlElement: HTM
 			const onMouseMove = (e: MouseEvent) => {
 				target.x = e.x + 10;
 				if ((e.target instanceof HTMLElement) && e.target.classList.contains('action-label')) {
-					hideHover(true, true);
+					hideHover(true, true, false);
 				}
 			};
 			toDispose.add(dom.addDisposableListener(htmlElement, dom.EventType.MOUSE_MOVE, onMouseMove, true));
@@ -218,11 +218,11 @@ export function setupCustomHover(hoverDelegate: IHoverDelegate, htmlElement: HTM
 	const mouseOverDomEmitter = dom.addDisposableListener(htmlElement, dom.EventType.MOUSE_OVER, onMouseOver, true);
 	const hover: ICustomHover = {
 		show: focus => {
-			hideHover(false, true); // terminate a ongoing mouse over preparation
+			hideHover(false, true, false); // terminate a ongoing mouse over preparation
 			triggerShowHover(0, focus); // show hover immediately
 		},
 		hide: () => {
-			hideHover(true, true);
+			hideHover(true, true, false);
 		},
 		update: async (newContent, hoverOptions) => {
 			content = newContent;
@@ -230,7 +230,7 @@ export function setupCustomHover(hoverDelegate: IHoverDelegate, htmlElement: HTM
 		},
 		dispose: () => {
 			mouseOverDomEmitter.dispose();
-			hideHover(true, true);
+			hideHover(true, true, false);
 		}
 	};
 	return hover;

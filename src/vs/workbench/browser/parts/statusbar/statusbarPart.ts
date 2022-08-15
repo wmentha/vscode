@@ -70,12 +70,12 @@ export class StatusbarPart extends Part implements IStatusbarService {
 
 	private readonly hoverDelegate = new class implements IHoverDelegate {
 
-		private lastHoverHideTime = 0;
+		private _lastHoverHideTime = 0;
 
 		readonly placement = 'element';
 
 		get delay() {
-			if (Date.now() - this.lastHoverHideTime < 200) {
+			if (Date.now() - this._lastHoverHideTime < 200) {
 				return 0; // show instantly when a hover was recently shown
 			}
 
@@ -94,8 +94,8 @@ export class StatusbarPart extends Part implements IStatusbarService {
 			}, focus);
 		}
 
-		onDidHideHover(): void {
-			this.lastHoverHideTime = Date.now();
+		onDidHideHover(resetDelay: boolean): void {
+			this._lastHoverHideTime = resetDelay ? 0 : Date.now();
 		}
 	}(this.configurationService, this.hoverService);
 

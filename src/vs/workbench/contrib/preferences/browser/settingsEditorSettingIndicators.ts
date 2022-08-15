@@ -55,7 +55,6 @@ export class SettingsTreeIndicatorsLabel implements IDisposable {
 			showHover: (options: IHoverDelegateOptions, focus?: boolean) => {
 				return hoverService.showHover(options, focus);
 			},
-			onDidHideHover: () => { },
 			delay: configurationService.getValue<number>('workbench.hover.delay'),
 			placement: 'element'
 		};

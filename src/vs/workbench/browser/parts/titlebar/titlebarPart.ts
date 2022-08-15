@@ -115,8 +115,8 @@ export class TitlebarPart extends Part implements ITitleService {
 					: configurationService.getValue<number>('workbench.hover.delay');
 			}
 
-			onDidHideHover() {
-				this._lastHoverHideTime = Date.now();
+			onDidHideHover(resetDelay: boolean) {
+				this._lastHoverHideTime = resetDelay ? 0 : Date.now();
 			}
 		};
 
