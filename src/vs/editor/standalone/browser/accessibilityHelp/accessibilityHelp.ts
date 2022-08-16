@@ -238,8 +238,11 @@ class AccessibilityHelpWidget extends Widget implements IOverlayWidget {
 			if (model) {
 				selections.forEach((selection) => {
 					charactersSelected += model.getValueLengthInRange(selection);
-					lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber + 1;
+					lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber;
 				});
+				if (lines) {
+					lines += 1;
+				}
 			}
 		}
 

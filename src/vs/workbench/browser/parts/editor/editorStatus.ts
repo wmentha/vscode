@@ -845,7 +845,10 @@ export class EditorStatus extends Disposable implements IWorkbenchContribution {
 					}
 
 					info.charactersSelected += textModel.getCharacterCountInRange(selection);
-					info.lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber + 1;
+					info.lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber;
+				}
+				if (info.lines) {
+					info.lines += 1;
 				}
 			}
 
