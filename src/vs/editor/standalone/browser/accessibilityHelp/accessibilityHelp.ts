@@ -69,21 +69,29 @@ class AccessibilityHelpController extends Disposable
 }
 
 
-function getSelectionLabel(selections: Selection[] | null, charactersSelected: number, linesSelected: number): string {
+function getSelectionLabel(selections: Selection[] | null, charactersSelected: number, lines: number): string {
 	if (!selections || selections.length === 0) {
 		return AccessibilityHelpNLS.noSelection;
 	}
 
 	if (selections.length === 1) {
 		if (charactersSelected) {
-			return strings.format(AccessibilityHelpNLS.singleSelectionRange, selections[0].positionLineNumber, selections[0].positionColumn, linesSelected, charactersSelected);
+			if (lines && lines > 1) {
+				return strings.format(AccessibilityHelpNLS.nlsSingleSelectionRangeMultiLine, selections[0].positionLineNumber, selections[0].positionColumn, charactersSelected, lines);
+			}
+
+			return strings.format(AccessibilityHelpNLS.singleSelectionRange, selections[0].positionLineNumber, selections[0].positionColumn, charactersSelected);
 		}
 
 		return strings.format(AccessibilityHelpNLS.singleSelection, selections[0].positionLineNumber, selections[0].positionColumn);
 	}
 
 	if (charactersSelected) {
-		return strings.format(AccessibilityHelpNLS.multiSelectionRange, selections.length, linesSelected, charactersSelected);
+		if (lines && lines > 1) {
+			return strings.format(AccessibilityHelpNLS.nlsMultiSelectionRangeMultiLine, selections.length, charactersSelected, lines);
+		}
+
+		return strings.format(AccessibilityHelpNLS.multiSelectionRange, selections.length, charactersSelected);
 	}
 
 	if (selections.length > 0) {
@@ -222,20 +230,20 @@ class AccessibilityHelpWidget extends Widget implements IOverlayWidget {
 		const options = this._editor.getOptions();
 
 		const selections = this._editor.getSelections();
-
-		let charactersSelected = 0, linesSelected = 0;
+		let charactersSelected = 0;
+		let lines = 0;
 
 		if (selections) {
 			const model = this._editor.getModel();
 			if (model) {
 				selections.forEach((selection) => {
 					charactersSelected += model.getValueLengthInRange(selection);
-					linesSelected += (selection.endLineNumber - selection.startLineNumber + 1);
+					lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber + 1;
 				});
 			}
 		}
 
-		let text = getSelectionLabel(selections, charactersSelected, linesSelected);
+		let text = getSelectionLabel(selections, charactersSelected, lines);
 
 		if (options.get(EditorOption.inDiffEditor)) {
 			if (options.get(EditorOption.readOnly)) {
