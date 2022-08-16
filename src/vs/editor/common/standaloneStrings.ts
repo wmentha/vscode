@@ -7,10 +7,12 @@ import * as nls from 'vs/nls';
 
 export namespace AccessibilityHelpNLS {
 	export const noSelection = nls.localize("noSelection", "No selection");
-	export const singleSelectionRange = nls.localize("singleSelectionRange", "Line {0}, Column {1} ({2} selected)");
+	export const singleSelectionRange = nls.localize("singleSelectionRange", "Line {0}, Column {1} ({2} characters selected)");
+	export const nlsSingleSelectionRangeMultiLine = nls.localize('singleSelectionRange', "Ln {0}, Col {1} ({2} characters selected, {3} lines)");
 	export const singleSelection = nls.localize("singleSelection", "Line {0}, Column {1}");
 	export const multiSelectionRange = nls.localize("multiSelectionRange", "{0} selections ({1} characters selected)");
-	export const multiSelection = nls.localize("multiSelection", "{0} selections");
+	export const nlsMultiSelectionRangeMultiLine = nls.localize('multiSelectionRangeMultiLine', "{0} selections ({1} characters selected, {2} lines)");
+	export const multiSelection = nls.localize("multiSelection", "{0} cursors");
 	export const emergencyConfOn = nls.localize("emergencyConfOn", "Now changing the setting `accessibilitySupport` to 'on'.");
 	export const openingDocs = nls.localize("openingDocs", "Now opening the Editor Accessibility documentation page.");
 	export const readonlyDiffEditor = nls.localize("readonlyDiffEditor", " in a read-only pane of a diff editor.");

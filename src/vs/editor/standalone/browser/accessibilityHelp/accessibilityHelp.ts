@@ -69,13 +69,17 @@ class AccessibilityHelpController extends Disposable
 }
 
 
-function getSelectionLabel(selections: Selection[] | null, charactersSelected: number): string {
+function getSelectionLabel(selections: Selection[] | null, charactersSelected: number, lines: number): string {
 	if (!selections || selections.length === 0) {
 		return AccessibilityHelpNLS.noSelection;
 	}
 
 	if (selections.length === 1) {
 		if (charactersSelected) {
+			if (lines) {
+				return strings.format(AccessibilityHelpNLS.nlsSingleSelectionRangeMultiLine, selections[0].positionLineNumber, selections[0].positionColumn, charactersSelected, lines);
+			}
+
 			return strings.format(AccessibilityHelpNLS.singleSelectionRange, selections[0].positionLineNumber, selections[0].positionColumn, charactersSelected);
 		}
 
@@ -83,6 +87,10 @@ function getSelectionLabel(selections: Selection[] | null, charactersSelected: n
 	}
 
 	if (charactersSelected) {
+		if (lines) {
+			return strings.format(AccessibilityHelpNLS.nlsMultiSelectionRangeMultiLine, selections.length, charactersSelected, lines);
+		}
+
 		return strings.format(AccessibilityHelpNLS.multiSelectionRange, selections.length, charactersSelected);
 	}
 
@@ -223,17 +231,19 @@ class AccessibilityHelpWidget extends Widget implements IOverlayWidget {
 
 		const selections = this._editor.getSelections();
 		let charactersSelected = 0;
+		let lines = 0;
 
 		if (selections) {
 			const model = this._editor.getModel();
 			if (model) {
 				selections.forEach((selection) => {
 					charactersSelected += model.getValueLengthInRange(selection);
+					lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber;
 				});
 			}
 		}
 
-		let text = getSelectionLabel(selections, charactersSelected);
+		let text = getSelectionLabel(selections, charactersSelected, lines);
 
 		if (options.get(EditorOption.inDiffEditor)) {
 			if (options.get(EditorOption.readOnly)) {

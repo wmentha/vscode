@@ -137,6 +137,7 @@ function toEditorWithLanguageSupport(input: EditorInput): ILanguageSupport | nul
 interface IEditorSelectionStatus {
 	selections?: Selection[];
 	charactersSelected?: number;
+	lines?: number;
 }
 
 class StateChange {
@@ -289,10 +290,12 @@ class State {
 	}
 }
 
-const nlsSingleSelectionRange = localize('singleSelectionRange', "Ln {0}, Col {1} ({2} selected)");
+const nlsSingleSelectionRange = localize('singleSelectionRange', "Ln {0}, Col {1} ({2} characters selected)");
+const nlsSingleSelectionRangeMultiLine = localize('singleSelectionRangeMultiLine', "Ln {0}, Col {1} ({2} characters selected, {3} lines)");
 const nlsSingleSelection = localize('singleSelection', "Ln {0}, Col {1}");
 const nlsMultiSelectionRange = localize('multiSelectionRange', "{0} selections ({1} characters selected)");
-const nlsMultiSelection = localize('multiSelection', "{0} selections");
+const nlsMultiSelectionRangeMultiLine = localize('multiSelectionRangeMultiLine', "{0} selections ({1} characters selected, {2} lines)");
+const nlsMultiSelection = localize('multiSelection', "{0} cursors");
 const nlsEOLLF = localize('endOfLineLineFeed', "LF");
 const nlsEOLCRLF = localize('endOfLineCarriageReturnLineFeed', "CRLF");
 
@@ -611,6 +614,10 @@ export class EditorStatus extends Disposable implements IWorkbenchContribution {
 
 		if (info.selections.length === 1) {
 			if (info.charactersSelected) {
+				if (info.lines) {
+					return format(nlsSingleSelectionRangeMultiLine, info.selections[0].positionLineNumber, info.selections[0].positionColumn, info.charactersSelected, info.lines);
+				}
+
 				return format(nlsSingleSelectionRange, info.selections[0].positionLineNumber, info.selections[0].positionColumn, info.charactersSelected);
 			}
 
@@ -618,6 +625,10 @@ export class EditorStatus extends Disposable implements IWorkbenchContribution {
 		}
 
 		if (info.charactersSelected) {
+			if (info.lines) {
+				return format(nlsMultiSelectionRangeMultiLine, info.selections.length, info.charactersSelected, info.lines);
+			}
+
 			return format(nlsMultiSelectionRange, info.selections.length, info.charactersSelected);
 		}
 
@@ -822,14 +833,19 @@ export class EditorStatus extends Disposable implements IWorkbenchContribution {
 
 			// Compute selection length
 			info.charactersSelected = 0;
+			info.lines = 0;
 			const textModel = editorWidget.getModel();
 			if (textModel) {
 				for (const selection of info.selections) {
 					if (typeof info.charactersSelected !== 'number') {
 						info.charactersSelected = 0;
 					}
+					if (typeof info.lines !== 'number') {
+						info.lines = 0;
+					}
 
 					info.charactersSelected += textModel.getCharacterCountInRange(selection);
+					info.lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber;
 				}
 			}
 
