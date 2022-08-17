@@ -231,18 +231,26 @@ class AccessibilityHelpWidget extends Widget implements IOverlayWidget {
 
 		const selections = this._editor.getSelections();
 		let charactersSelected = 0;
+		let lineSet = new Set<number>();
 		let lines = 0;
 
 		if (selections) {
 			const model = this._editor.getModel();
 			if (model) {
 				selections.forEach((selection) => {
+					// Characters
 					charactersSelected += model.getValueLengthInRange(selection);
+					// Lines
 					lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber;
+					if (!selection.isEmpty()) { // If just a cursor, ignore from count
+						const startLine = selection.getStartPosition().lineNumber;
+						const endLine = selection.getEndPosition().lineNumber;
+						for (let lineNumber = startLine; lineNumber <= endLine; lineNumber++) {
+							lineSet.add(lineNumber);
+						}
+					}
 				});
-				if (lines) {
-					lines += 1;
-				}
+				lines = lineSet.size;
 			}
 		}
 

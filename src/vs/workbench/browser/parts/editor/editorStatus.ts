@@ -833,6 +833,8 @@ export class EditorStatus extends Disposable implements IWorkbenchContribution {
 
 			// Compute selection length
 			info.charactersSelected = 0;
+			// Compute lines covered by selections
+			let lineSet = new Set<number>();
 			info.lines = 0;
 			const textModel = editorWidget.getModel();
 			if (textModel) {
@@ -844,12 +846,20 @@ export class EditorStatus extends Disposable implements IWorkbenchContribution {
 						info.lines = 0;
 					}
 
+					// Characters
 					info.charactersSelected += textModel.getCharacterCountInRange(selection);
-					info.lines += selection.getEndPosition().lineNumber - selection.getStartPosition().lineNumber;
+
+					// Lines
+					if (!selection.isEmpty()) { // If just a cursor, ignore from count
+						const startLine = selection.getStartPosition().lineNumber;
+						const endLine = selection.getEndPosition().lineNumber;
+						for (let lineNumber = startLine; lineNumber <= endLine; lineNumber++) {
+							lineSet.add(lineNumber);
+						}
+					}
 				}
-				if (info.lines) {
-					info.lines += 1;
-				}
+
+				info.lines = lineSet.size;
 			}
 
 			// Compute the visible column for one selection. This will properly handle tabs and their configured widths
